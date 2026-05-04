@@ -5,20 +5,17 @@
         public const int GameWidth = 800;
         public const int GameHeight = 600;
 
-        // Движение
-        public const float PlayerSpeed = 200f;      // пикселей/сек
-        public const float GhostSpeed = 100f;       // пикселей/сек
+        public const float PlayerSpeed = 200f;
+        public const float GhostSpeed = 100f;
 
-        // Обзор
-        public const float SightRadius = 150f;      // серый радиус
-        public const float FlashRadius = 120f;      // дальность вспышки
-        public const float FlashAngle = 30f;        // градусы
-        public const float FlashCooldown = 3f;      // секунды
+        public const float SightRadius = 150f;
+        public const float FlashRadius = 120f;
+        public const float FlashAngle = 30f;
+        public const float FlashCooldown = 3f;
 
-        // Игровая логика
-        public const int MaxFlashKills = 3;         // макс убийств за вспышку
-        public const int GhostSpawnInterval = 2000; // мс
+        public const int MaxFlashKills = 3;
+        public const int GhostSpawnInterval = 2000;
         public const int MaxGhosts = 20;
-        public const bool CyclicWorld = true;       // цикличная карта
+        public const bool CyclicWorld = true;
     }
 }
