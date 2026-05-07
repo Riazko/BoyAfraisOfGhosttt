@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BoyAfraisOfGhosttt.Helpers
+namespace BoyAfraidOfGhosts.Helpers
 {
     public struct Vector2D
     {

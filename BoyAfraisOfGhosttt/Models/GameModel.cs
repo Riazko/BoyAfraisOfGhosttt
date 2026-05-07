@@ -1,18 +1,34 @@
-public class GameModel
+using System.Collections.Generic;
+using BoyAfraidOfGhosts.Helpers;
+using System;
+
+namespace BoyAfraidOfGhosts.Models
 {
-    public PlayerModel Player { get; set; }
-    public World World { get; set; }
-    public bool IsGameOver { get; set; } = false;
-    public int MaxGhosts { get; set; } = 5;
-    
-    public GameModel(int screenWidth, int screenHeight)
+    public class GameModel
     {
-        Player = new PlayerModel(screenWidth / 2, screenHeight / 2);
-        World = new World();
-        
-        for (int i = 0; i < 3; i++)
+        public PlayerModel Player { get; set; }
+        public List<GhostModel> Ghosts { get; set; }
+        public bool IsGameOver { get; set; }
+
+        public GameModel()
         {
-            World.AddGhost(Player.X + 200, Player.Y + 200);
+            Player = new PlayerModel();
+            Ghosts = new List<GhostModel>();
+            CreateStartGhosts(Ghosts, Player);
+            IsGameOver = false;
+        }
+
+        public void CreateStartGhosts(List<GhostModel> ghosts, PlayerModel player)
+        {
+            var rand = new Random();
+            for (int i = 0; i < 3; i++)
+            {
+                var angle = rand.NextDouble() * Math.PI * 2;
+                var distance = rand.Next(150, 350);
+                var x = player.Position.X + Math.Cos(angle) * distance;
+                var y = player.Position.Y + Math.Sin(angle) * distance;
+                ghosts.Add(new GhostModel(new Vector2D(x, y)));
+            }
         }
     }
 }

@@ -1,10 +1,10 @@
+using System;
 using System.Windows.Forms;
-using BoyAfraisOfGhosttt.Views;
 
-namespace BoyAfraisOfGhosttt
+namespace BoyAfraidOfGhosts
 {
-    static class Program
-    {            
+    internal static class Program
+    {
         static void Main()
         {
             Application.EnableVisualStyles();

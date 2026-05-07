@@ -44,16 +44,35 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\GameController.cs" />
-    <Compile Include="Models\GameModel.cs" />
-    <Compile Include="Models\Player.cs" />
-    <Compile Include="Models\World.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Views\MainForm.cs">
+    <Compile Include="Controllers\GhostController.cs" />
+    <Compile Include="Controllers\GreedyFlashSelector.cs" />
+    <Compile Include="Controllers\LightController.cs" />
+    <Compile Include="Controllers\MovementController.cs" />
+    <Compile Include="Controllers\PathfindingController.cs" />
+    <Compile Include="Controllers\SpawnerThread.cs" />
+    <Compile Include="Helpers\FunctionalHelpers.cs" />
+    <Compile Include="Helpers\GeometryHelper.cs" />
+    <Compile Include="Helpers\Optional.cs" />
+    <Compile Include="Helpers\Vector2D.cs" />
+    <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Models\GameModel.cs" />
+    <Compile Include="Models\HeatMap.cs" />
+    <Compile Include="Models\ImmutableRecords.cs" />
+    <Compile Include="Models\PathfindingGraph.cs" />
+    <Compile Include="Models\PlayerModel.cs" />
+    <Compile Include="Models\WorldGenerator.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Settings.cs" />
+    <Compile Include="Views\GameRenderer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Models\Ghost.cs" />
+    <Compile Include="Models\GhostModel.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,29 +1,19 @@
-using System.Drawing;
+using BoyAfraidOfGhosts.Helpers;
 
-public class Player
+namespace BoyAfraidOfGhosts.Models
 {
-    public int X { get; set; }
-    public int Y { get; set; }
-    public int Radius { get; set; } = 120;
-    public int LightCooldown { get; set; } = 0;
-    public int LightCooldownMax { get; set; } = 90; 
-    public bool IsLightReady => LightCooldown <= 0;
-    
-    public Player(int startX, int startY)
+    public class PlayerModel
     {
-        X = startX;
-        Y = startY;
-    }
-    
-    public void Update()
-    {
-        if (LightCooldown > 0)
-            LightCooldown--;
-    }
-    
-    public void UseLight()
-    {
-        if (IsLightReady)
-            LightCooldown = LightCooldownMax;
+        public Vector2D Position { get; set; }
+        public float FlashCooldown { get; set; }
+        public double Direction { get; set; }
+
+        public PlayerModel()
+        {
+            Position = new Vector2D(0, 0);
+            FlashCooldown = 0;
+            Direction = 0;
+        }
+
     }
 }

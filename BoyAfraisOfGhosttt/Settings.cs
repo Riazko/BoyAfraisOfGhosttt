@@ -1,7 +1,8 @@
-﻿namespace BoyAfraisOfGhosttt
+﻿namespace BoyAfraidOfGhosts
 {
     public static class Settings
     {
+        //проверка
         public const int GameWidth = 800;
         public const int GameHeight = 600;
 
