@@ -19,5 +19,23 @@ namespace BoyAfraidOfGhosts.Controllers
                 .ToList();
             return toKill;
         }
+
+        public Optional<GhostModel> SelectNearestGhostInFlash(
+            List<GhostModel> ghosts,
+            Vector2D playerPosition,
+            Vector2D flashDirection,
+            double halfAngleDegrees)
+        {
+            return ghosts
+                .Where(p => p.IsAlive)
+                .Where(p => GeometryHelper.IsPointInCone(
+                    playerPosition,
+                    flashDirection,
+                    halfAngleDegrees,
+                    p.Position,
+                    Settings.FlashRadius))
+                .OrderBy(p => p.Position.DistanceTo(playerPosition))
+                .FirstOrNone(p => true);
+        }
     }
 }

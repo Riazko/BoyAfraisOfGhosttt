@@ -6,52 +6,109 @@ namespace BoyAfraidOfGhosts.Controllers
 {
     public class GhostController
     {
-        private GameModel gameModel;
+        private readonly GameModel gameModel;
+        private readonly PathfindingController pathfinder;
+        private readonly Random random;
+        private float globalPathUpdateCooldown;
+        private const float GlobalPathUpdateInterval = 0.3f;
 
         public GhostController(GameModel gameModel)
         {
             this.gameModel = gameModel;
+            pathfinder = new PathfindingController(gameModel);
+            random = new Random();
         }
 
         public void UpdateGhosts(float deltaTime)
         {
-            if (gameModel.IsGameOver) 
+            if (gameModel.IsGameOver)
                 return;
 
-            for (var i = gameModel.Ghosts.Count - 1; i >= 0; i--)
+            pathfinder.UpdateHeatMap();
+            globalPathUpdateCooldown -= deltaTime;
+            lock (gameModel.Ghosts)
             {
-                var ghost = gameModel.Ghosts[i];
-                if (!ghost.IsAlive)
+                for (var i = gameModel.Ghosts.Count - 1; i >= 0; i--)
                 {
-                    gameModel.Ghosts.RemoveAt(i);
-                    continue;
-                }
+                    var ghost = gameModel.Ghosts[i];
+                    if (!ghost.IsAlive)
+                    {
+                        gameModel.Ghosts.RemoveAt(i);
+                        continue;
+                    }
 
-                var directionToPlayer = gameModel.Player.Position.Subtract(ghost.Position);
-                var distance = directionToPlayer.Length();
+                    ghost.PathUpdateTimer -= deltaTime;
+                    bool shouldUpdatePath = ghost.PathUpdateTimer <= 0 || ghost.CurrentPath.Count == 0;
+                    if (shouldUpdatePath && globalPathUpdateCooldown <= 0)
+                    {
+                        var distanceToPlayer = ghost.Position.DistanceTo(gameModel.Player.Position);
+                        Vector2D pathTarget;
+                        if (distanceToPlayer > Settings.FlashRadius)
+                            pathTarget = pathfinder.GetBestSurroundTarget(ghost);
+                        else
+                            pathTarget = gameModel.Player.Position;
+                        ghost.CurrentPath = pathfinder.FindPath(ghost.Position, pathTarget, ghost);
+                        ghost.PathUpdateTimer = 0.5f + (float)random.NextDouble() * 0.3f;
+                    }
 
-                if (distance < 0.01) 
-                    continue;
+                    if (ghost.CurrentPath.Count > 0)
+                    {
+                        MoveGhostByPath(ghost, deltaTime);
+                    }
+                    else
+                    {
+                        MoveGhostStraightToPlayer(ghost, deltaTime);
+                    }
 
-                var norm = directionToPlayer.Normalize();
+                    if (Settings.CyclicWorld)
+                        ghost.Position = WorldGenerator.WrapPosition(ghost.Position);
 
-                var newX = ghost.Position.X + norm.X * Settings.GhostSpeed * deltaTime;
-                var newY = ghost.Position.Y + norm.Y * Settings.GhostSpeed * deltaTime;
-                ghost.Position = new Vector2D(newX, newY);
-
-                if (ghost.Position.DistanceTo(gameModel.Player.Position) < 20)
-                {
-                    gameModel.IsGameOver = true;
+                    if (ghost.Position.DistanceTo(gameModel.Player.Position) < 20)
+                        gameModel.IsGameOver = true;
                 }
             }
+            if (globalPathUpdateCooldown <= 0)
+                globalPathUpdateCooldown = GlobalPathUpdateInterval;
+        }
+
+        private void MoveGhostByPath(GhostModel ghost, float deltaTime)
+        {
+            var targetPosition = ghost.CurrentPath[0];
+            double distanceToTarget = ghost.Position.DistanceTo(targetPosition);
+            if (distanceToTarget < 15)
+            {
+                ghost.CurrentPath.RemoveAt(0);
+                return;
+            }
+            MoveGhostToPosition(ghost, targetPosition, deltaTime);
+        }
+
+        private void MoveGhostStraightToPlayer(GhostModel ghost, float deltaTime)
+        {
+            MoveGhostToPosition(ghost, gameModel.Player.Position, deltaTime);
+        }
+
+        private void MoveGhostToPosition(GhostModel ghost, Vector2D targetPosition, float deltaTime)
+        {
+            var directionToTarget = targetPosition.Subtract(ghost.Position);
+            var norm = directionToTarget.Normalize();
+            var newX = ghost.Position.X + norm.X * ghost.Speed * deltaTime;
+            var newY = ghost.Position.Y + norm.Y * ghost.Speed * deltaTime;
+            ghost.Position = new Vector2D(newX, newY);
         }
 
         public void SpawnGhost(Vector2D position)
         {
-            if (gameModel.Ghosts.Count < Settings.MaxGhosts)
+            lock (gameModel.Ghosts)
             {
-                gameModel.Ghosts.Add(new GhostModel(position));
+                if (gameModel.Ghosts.Count < Settings.MaxGhosts)
+                    gameModel.Ghosts.Add(new GhostModel(position));
             }
+        }
+
+        public void ClearPathCache()
+        {
+            pathfinder.ClearCache();
         }
     }
 }

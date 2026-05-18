@@ -61,11 +61,15 @@
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\GameModel.cs" />
+    <Compile Include="Models\GhostType.cs" />
     <Compile Include="Models\HeatMap.cs" />
     <Compile Include="Models\ImmutableRecords.cs" />
     <Compile Include="Models\PathfindingGraph.cs" />
+    <Compile Include="Models\PathfindingNode.cs" />
     <Compile Include="Models\PlayerModel.cs" />
     <Compile Include="Models\WorldGenerator.cs" />
+    <Compile Include="Models\WorldMap.cs" />
+    <Compile Include="Models\WorldTileType.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Views\GameRenderer.cs" />

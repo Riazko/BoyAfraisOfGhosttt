@@ -1,15 +1,15 @@
-﻿using System;
-using BoyAfraidOfGhosts.Models;
+﻿using BoyAfraidOfGhosts.Models;
 using BoyAfraidOfGhosts.Helpers;
+using System;
 
 namespace BoyAfraidOfGhosts.Controllers
 {
     public class LightController
     {
-        private GameModel gameModel;
+        private readonly GameModel gameModel;
         private float flashEffectTimer;
         private Vector2D lastFlashDirection;
-        private GreedyFlashSelector greedySelector;
+        private readonly GreedyFlashSelector greedySelector;
 
         public LightController(GameModel gameModel)
         {
@@ -27,8 +27,13 @@ namespace BoyAfraidOfGhosts.Controllers
                 if (gameModel.Player.FlashCooldown < 0)
                     gameModel.Player.FlashCooldown = 0;
             }
+
             if (flashEffectTimer > 0)
+            {
                 flashEffectTimer -= deltaTime;
+                if (flashEffectTimer < 0)
+                    flashEffectTimer = 0;
+            }
         }
 
         public void PerformFlash(Vector2D cursorWorldPosition)
@@ -39,18 +44,28 @@ namespace BoyAfraidOfGhosts.Controllers
             var flashDirection = cursorWorldPosition.Subtract(gameModel.Player.Position);
             if (flashDirection.Length() < 0.01)
                 return;
+
             flashDirection = flashDirection.Normalize();
-
             lastFlashDirection = flashDirection;
+            gameModel.Player.Direction = Math.Atan2(flashDirection.Y, flashDirection.X);
             flashEffectTimer = 0.1f;
-
             var halfAngle = Settings.FlashAngle / 2;
-            var ghostsToKill = greedySelector.SelectGhostsToKill(gameModel.Ghosts, gameModel.Player.Position,
-                flashDirection, halfAngle);
-
-            foreach (var ghost in ghostsToKill)
+            lock (gameModel.Ghosts)
             {
-                ghost.IsAlive = false;
+                var ghostsToHit = greedySelector.SelectGhostsToKill(
+                    gameModel.Ghosts,
+                    gameModel.Player.Position,
+                    flashDirection,
+                    halfAngle);
+                foreach (var ghost in ghostsToHit)
+                {
+                    bool wasAlive = ghost.IsAlive;
+                    ghost.TakeDamage(1);
+                    if (wasAlive && !ghost.IsAlive)
+                    {
+                        gameModel.RegisterGhostKill(ghost);
+                    }
+                }
             }
             gameModel.Player.FlashCooldown = Settings.FlashCooldown;
         }

@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
+using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using BoyAfraidOfGhosts.Controllers;
 using BoyAfraidOfGhosts.Helpers;
@@ -16,34 +11,38 @@ namespace BoyAfraidOfGhosts
     public partial class MainForm : Form
     {
         private Timer gameTimer;
+        private Stopwatch gameStopwatch;
         private GameController controller;
         private bool upPressed;
         private bool downPressed;
         private bool leftPressed;
         private bool rightPressed;
         private GameRenderer renderer;
+        private Point lastMousePosition;
+        private bool hasMousePosition;
 
         public MainForm()
         {
             InitializeComponent();
             SetupForm();
-            SetupTimer();
             SetupController();
             SetupInput();
             SetupRenderer();
+            SetupTimer();
         }
 
         private void SetupForm()
         {
-            this.Text = "Ghost Game";
-            this.ClientSize = new Size(Settings.GameWidth, Settings.GameHeight);
-            this.DoubleBuffered = true;
-            this.KeyPreview = true;
-            this.BackColor = Color.Black;
+            Text = "Ghost Game";
+            ClientSize = new Size(Settings.GameWidth, Settings.GameHeight);
+            DoubleBuffered = true;
+            KeyPreview = true;
+            BackColor = Color.Black;
         }
 
         private void SetupTimer()
         {
+            gameStopwatch = Stopwatch.StartNew();
             gameTimer = new Timer();
             gameTimer.Interval = 16;
             gameTimer.Tick += GameLoop;
@@ -57,9 +56,10 @@ namespace BoyAfraidOfGhosts
 
         private void SetupInput()
         {
-            this.KeyDown += OnKeyDown;
-            this.KeyUp += OnKeyUp;
-            this.MouseClick += OnMouseClick;
+            KeyDown += OnKeyDown;
+            KeyUp += OnKeyUp;
+            MouseClick += OnMouseClick;
+            MouseMove += OnMouseMove;
         }
 
         private void OnKeyDown(object sender, KeyEventArgs e)
@@ -68,7 +68,11 @@ namespace BoyAfraidOfGhosts
             if (e.KeyCode == Keys.S || e.KeyCode == Keys.Down) downPressed = true;
             if (e.KeyCode == Keys.A || e.KeyCode == Keys.Left) leftPressed = true;
             if (e.KeyCode == Keys.D || e.KeyCode == Keys.Right) rightPressed = true;
-            if (e.KeyCode == Keys.R) controller.RestartGame();
+            if (e.KeyCode == Keys.R)
+            {
+                controller.RestartGame();
+                UpdatePlayerFacing();
+            }
         }
 
         private void OnKeyUp(object sender, KeyEventArgs e)
@@ -79,35 +83,62 @@ namespace BoyAfraidOfGhosts
             if (e.KeyCode == Keys.D || e.KeyCode == Keys.Right) rightPressed = false;
         }
 
+        private void OnMouseMove(object sender, MouseEventArgs e)
+        {
+            lastMousePosition = e.Location;
+            hasMousePosition = true;
+            UpdatePlayerFacing();
+        }
+
         private void OnMouseClick(object sender, MouseEventArgs e)
         {
+            lastMousePosition = e.Location;
+            hasMousePosition = true;
+            UpdatePlayerFacing();
+            controller.PerformFlash(ScreenToWorld(e.Location));
+        }
+
+        private Vector2D ScreenToWorld(Point screenPoint)
+        {
             var player = controller.GetModel().Player;
-            var worldX = (e.X - Settings.GameWidth / 2) + player.Position.X;
-            var worldY = (e.Y - Settings.GameHeight / 2) + player.Position.Y;
-            var cursorWorld = new Vector2D(worldX, worldY);
-            controller.PerformFlash(cursorWorld);
+            var worldX = (screenPoint.X - ClientSize.Width / 2.0) + player.Position.X;
+            var worldY = (screenPoint.Y - ClientSize.Height / 2.0) + player.Position.Y;
+            return new Vector2D(worldX, worldY);
+        }
+
+        private void UpdatePlayerFacing()
+        {
+            if (!hasMousePosition)
+                return;
+            var faceRight = lastMousePosition.X >= ClientSize.Width / 2;
+            controller.UpdatePlayerFacing(faceRight);
         }
 
         private Vector2D GetMoveDirection()
         {
             var x = 0.0;
             var y = 0.0;
-            if (leftPressed) x = -1;
-            if (rightPressed) x = 1;
-            if (upPressed) y = -1;
-            if (downPressed) y = 1;
+            if (leftPressed) x -= 1;
+            if (rightPressed) x += 1;
+            if (upPressed) y -= 1;
+            if (downPressed) y += 1;
             var raw = new Vector2D(x, y);
             return raw.Length() > 0 ? raw.Normalize() : raw;
         }
 
         private void GameLoop(object sender, EventArgs e)
         {
+            float deltaTime = (float)gameStopwatch.Elapsed.TotalSeconds;
+            gameStopwatch.Restart();
+            if (deltaTime > 0.05f)
+                deltaTime = 0.05f;
+
             var direction = GetMoveDirection();
-            var deltaTime = gameTimer.Interval / 1000f;
             controller.UpdateMovement(direction, deltaTime);
+            UpdatePlayerFacing();
             controller.UpdateGhosts(deltaTime);
             controller.UpdateTimers(deltaTime);
-            this.Invalidate();
+            Invalidate();
         }
 
         private void SetupRenderer()
@@ -118,9 +149,26 @@ namespace BoyAfraidOfGhosts
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            renderer.Render(e.Graphics, controller.GetModel(), controller.IsFlashEffectActive,
-                controller.LastFlashDirection, Settings.GameWidth, Settings.GameHeight);
+            renderer.Render(
+                e.Graphics,
+                controller.GetModel(),
+                controller.IsFlashEffectActive,
+                controller.LastFlashDirection,
+                ClientSize.Width,
+                ClientSize.Height);
         }
 
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            if (gameTimer != null)
+                gameTimer.Stop();
+
+            if (renderer != null)
+                renderer.Dispose();
+
+            if (controller != null)
+                controller.Dispose();
+            base.OnFormClosed(e);
+        }
     }
 }
